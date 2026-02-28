@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -462,14 +463,16 @@ function renderWelcome(el) {
     </div>
 
     <div class="csv-prompt">
-      <pre><span class="cm"># type, name, status, description, url, tags, priority</span>
-focus, , , 今日の最重要タスクをここに書く, , ,
-project, KAGAMI, live, AI日記ツール, https://example.com, HTML|API, 1
-project, ぼうけんのしょ, wip, 積みゲーRPG, , HTML|Steam, 2
-task, Steam APIキー取得, todo, , , urgent, urgent
-task, worker.js更新, todo, , , infra, high
-channel, X, , 毎日の進捗|クリア報告|#ぼうけんのしょ, , ,
-note, , , 今週はリリースを最優先にする, , ,</pre>
+      <pre><span class="cm"># Claudeに頼むと出力してくれるCSVの例</span>
+
+<span class="cm">type     │ name            │ status  │ description</span>
+focus    │                 │         │ 今日の最重要タスク
+project  │ KAGAMI          │ live    │ AI日記ツール
+project  │ ぼうけんのしょ  │ wip     │ 積みゲーRPG
+task     │ Steam APIキー取得│ todo    │
+task     │ worker.js更新   │ todo    │
+channel  │ X               │         │ 毎日の進捗
+note     │                 │         │ 今週はリリースを最優先</pre>
     </div>
   </div>`;
 }
