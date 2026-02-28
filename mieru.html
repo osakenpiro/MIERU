@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIERU</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f5f4f0;
+  --surface:  #ffffff;
+  --ink:      #1a1a18;
+  --muted:    #9a9a94;
+  --border:   #e4e3de;
+  --live:     #22c55e;
+  --wip:      #f59e0b;
+  --ready:    #3b82f6;
+  --planned:  #a3a3a3;
+  --urgent:   #ef4444;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Outfit', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:15px;
+  min-height:100vh;
+}
+
+/* ── HEADER ── */
+.hd{
+  position:sticky;top:0;z-index:100;
+  background:rgba(245,244,240,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:0 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:56px;
+}
+.hd-logo{
+  font-family:var(--mono);font-size:18px;font-weight:500;
+  letter-spacing:-.04em;color:var(--ink);
+}
+.hd-logo span{color:var(--muted);font-weight:400}
+.hd-right{display:flex;align-items:center;gap:12px}
+.upload-btn{
+  font-family:var(--mono);font-size:11px;
+  background:var(--ink);color:var(--bg);
+  border:none;padding:8px 16px;cursor:pointer;
+  letter-spacing:.04em;transition:opacity .15s;
+}
+.upload-btn:hover{opacity:.8}
+#file-input{display:none}
+.hd-date{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* ── LAYOUT ── */
+.wrap{max-width:1080px;margin:0 auto;padding:40px 32px 80px}
+@media(max-width:640px){.wrap{padding:24px 16px 60px}.hd{padding:0 16px}}
+
+/* ── SECTION ── */
+.sec{margin-bottom:48px}
+.sec-hd{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:20px;
+}
+.sec-title{
+  font-family:var(--mono);font-size:11px;
+  color:var(--muted);letter-spacing:.16em;text-transform:uppercase;
+}
+.sec-line{flex:1;height:1px;background:var(--border)}
+.sec-count{
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+}
+
+/* ── FOCUS BOX ── */
+.focus-box{
+  background:var(--ink);color:var(--bg);
+  padding:24px 28px;margin-bottom:48px;
+  display:flex;align-items:flex-start;gap:20px;
+}
+.focus-label{
+  font-family:var(--mono);font-size:9px;
+  letter-spacing:.2em;color:var(--muted);
+  margin-bottom:6px;text-transform:uppercase;
+}
+.focus-text{font-size:17px;font-weight:600;line-height:1.5}
+
+/* ── TASKS ── */
+.tasks{display:flex;flex-direction:column;gap:6px}
+.task{
+  display:grid;grid-template-columns:20px 1fr auto;
+  align-items:center;gap:14px;
+  padding:13px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:3px solid var(--border);
+  cursor:pointer;transition:border-color .12s,opacity .12s;
+  user-select:none;
+}
+.task:hover{border-color:var(--muted)}
+.task.done{opacity:.38}
+.task.done .task-text{text-decoration:line-through}
+.task[data-priority="urgent"]{border-left-color:var(--urgent)}
+.task[data-priority="high"]  {border-left-color:var(--wip)}
+.task[data-priority="normal"]{border-left-color:var(--ready)}
+
+.chk{
+  width:16px;height:16px;border:1.5px solid var(--border);
+  border-radius:3px;flex-shrink:0;display:flex;
+  align-items:center;justify-content:center;transition:all .12s;
+}
+.task.done .chk{background:var(--ink);border-color:var(--ink)}
+.task.done .chk::after{content:'✓';font-size:10px;color:var(--bg);font-weight:700}
+.task-text{font-size:14px;line-height:1.4}
+.task-tag{
+  font-family:var(--mono);font-size:9px;
+  padding:3px 8px;border:1px solid var(--border);
+  color:var(--muted);white-space:nowrap;letter-spacing:.05em;
+}
+.task[data-priority="urgent"] .task-tag{border-color:var(--urgent);color:var(--urgent)}
+.task[data-priority="high"]   .task-tag{border-color:var(--wip);color:var(--wip)}
+
+/* ── PROJECTS ── */
+.projects{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:12px;
+}
+.pcard{
+  background:var(--surface);border:1px solid var(--border);
+  padding:20px;position:relative;overflow:hidden;
+  transition:box-shadow .15s;
+}
+.pcard:hover{box-shadow:0 4px 20px rgba(0,0,0,.07)}
+.pcard::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+}
+.pcard[data-status="live"]   ::after{background:var(--live)}
+.pcard[data-status="wip"]    ::after{background:var(--wip)}
+.pcard[data-status="ready"]  ::after{background:var(--ready)}
+.pcard[data-status="planned"]::after{background:var(--planned)}
+
+.pstatus{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:9px;color:var(--muted);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;
+}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.pcard[data-status="live"]    .dot{background:var(--live);animation:blink 2s infinite}
+.pcard[data-status="wip"]     .dot{background:var(--wip)}
+.pcard[data-status="ready"]   .dot{background:var(--ready)}
+.pcard[data-status="planned"] .dot{background:var(--planned)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.pname{font-size:17px;font-weight:700;margin-bottom:6px;letter-spacing:-.02em}
+.pdesc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px}
+.ptags{display:flex;flex-wrap:wrap;gap:5px}
+.ptag{
+  font-family:var(--mono);font-size:9px;
+  border:1px solid var(--border);padding:2px 7px;color:var(--muted);
+}
+.purl{
+  display:block;margin-top:12px;
+  font-family:var(--mono);font-size:10px;
+  color:var(--ready);text-decoration:none;
+  word-break:break-all;
+}
+.purl:hover{text-decoration:underline}
+.purl.empty{color:var(--muted)}
+
+/* ── CHANNELS ── */
+.channels{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.ccard{
+  background:var(--surface);border:1px solid var(--border);
+  padding:18px 20px;
+}
+.cname{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  color:var(--ink);margin-bottom:10px;letter-spacing:.06em;
+}
+.citems{list-style:none}
+.citems li{
+  font-size:13px;color:var(--muted);
+  padding:5px 0;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;gap:8px;line-height:1.4;
+}
+.citems li:last-child{border-bottom:none}
+.citems li::before{content:'·';color:var(--ink);flex-shrink:0;margin-top:1px}
+
+/* ── NOTE ── */
+.note-box{
+  background:var(--surface);border:1px solid var(--border);
+  padding:20px 24px;font-size:14px;line-height:1.8;color:var(--ink);
+}
+
+/* ── EMPTY / WELCOME ── */
+.welcome{
+  text-align:center;padding:80px 24px;
+}
+.welcome-title{
+  font-size:48px;font-weight:700;letter-spacing:-.04em;
+  margin-bottom:16px;
+}
+.welcome-sub{
+  font-size:16px;color:var(--muted);line-height:1.8;
+  max-width:480px;margin:0 auto 40px;
+}
+.welcome-steps{
+  display:inline-flex;flex-direction:column;
+  gap:12px;text-align:left;
+}
+.step{
+  display:flex;align-items:flex-start;gap:14px;
+  font-size:14px;color:var(--muted);
+}
+.step-num{
+  font-family:var(--mono);font-size:11px;
+  background:var(--ink);color:var(--bg);
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-weight:500;
+}
+.step strong{color:var(--ink)}
+
+/* ── CSV PROMPT ── */
+.csv-prompt{
+  background:var(--ink);color:var(--bg);
+  padding:20px 24px;margin-top:32px;text-align:left;
+  display:inline-block;max-width:600px;width:100%;
+}
+.csv-prompt pre{
+  font-family:var(--mono);font-size:11px;
+  line-height:1.9;color:#a0ffa0;overflow-x:auto;
+}
+.csv-prompt .cm{color:#666}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--ink);color:var(--bg);
+  font-family:var(--mono);font-size:12px;
+  padding:12px 20px;
+  transform:translateY(80px);opacity:0;
+  transition:all .25s;pointer-events:none;
+  z-index:999;
+}
+.toast.show{transform:none;opacity:1}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<header class="hd">
+  <div class="hd-logo">MIERU <span>見える</span></div>
+  <div class="hd-right">
+    <div class="hd-date" id="hd-date"></div>
+    <button class="upload-btn" onclick="document.getElementById('file-input').click()">
+      CSV をアップロード
+    </button>
+    <input type="file" id="file-input" accept=".csv,text/csv">
+  </div>
+</header>
+
+<main class="wrap" id="main-content">
+  <!-- JS で描画 -->
+</main>
+
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+const STORE_CSV   = 'mieru_csv';
+const STORE_TASKS = 'mieru_tasks';
+
+let state = { focus:'', projects:[], tasks:[], channels:[], notes:[] };
+let taskDone = {};
+
+// ══════════════════════════════════════════════
+// CSV PARSER
+// ══════════════════════════════════════════════
+function parseCSV(text) {
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  if (!lines.length) return null;
+
+  // Strip BOM
+  if (lines[0].charCodeAt(0) === 0xFEFF) lines[0] = lines[0].slice(1);
+
+  const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const rows = lines.slice(1).map(line => {
+    // Handle quoted commas
+    const cells = [];
+    let cur = '', inQ = false;
+    for (const ch of line) {
+      if (ch === '"') { inQ = !inQ; continue; }
+      if (ch === ',' && !inQ) { cells.push(cur.trim()); cur = ''; continue; }
+      cur += ch;
+    }
+    cells.push(cur.trim());
+    const obj = {};
+    header.forEach((h, i) => obj[h] = (cells[i] || '').trim());
+    return obj;
+  });
+
+  const result = { focus:'', projects:[], tasks:[], channels:[], notes:[] };
+
+  rows.forEach(r => {
+    const type = (r.type || '').toLowerCase();
+    if (type === 'focus') {
+      result.focus = r.name || r.description || '';
+    } else if (type === 'project') {
+      result.projects.push({
+        name:   r.name || '',
+        status: (r.status || 'planned').toLowerCase(),
+        desc:   r.description || '',
+        url:    r.url || '',
+        tags:   r.tags ? r.tags.split('|').map(t=>t.trim()) : [],
+      });
+    } else if (type === 'task') {
+      result.tasks.push({
+        id:       r.name.replace(/\s+/g,'_').toLowerCase() + '_' + Math.random().toString(36).slice(2,6),
+        text:     r.name || '',
+        priority: (r.priority || 'normal').toLowerCase(),
+        tag:      r.tags || '',
+      });
+    } else if (type === 'channel') {
+      result.channels.push({
+        name:  r.name || '',
+        items: r.description ? r.description.split('|').map(s=>s.trim()) : [],
+      });
+    } else if (type === 'note') {
+      result.notes.push(r.description || r.name || '');
+    }
+  });
+
+  return result;
+}
+
+// ══════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function render() {
+  const el = document.getElementById('main-content');
+
+  if (!state.projects.length && !state.tasks.length) {
+    renderWelcome(el); return;
+  }
+
+  let html = '';
+
+  // FOCUS
+  if (state.focus) {
+    html += `<div class="focus-box">
+      <div>
+        <div class="focus-label">Today's Focus</div>
+        <div class="focus-text">${esc(state.focus)}</div>
+      </div>
+    </div>`;
+  }
+
+  // TASKS
+  if (state.tasks.length) {
+    const done = state.tasks.filter(t => taskDone[t.id]).length;
+    html += `<div class="sec">
+      <div class="sec-hd">
+        <div class="sec-title">Tasks</div>
+        <div class="sec-line"></div>
+        <div class="sec-count">${done} / ${state.tasks.length}</div>
+      </div>
+      <div class="tasks">`;
+    state.tasks.forEach(t => {
+      const isDone = taskDone[t.id] ? ' done' : '';
+      const pLabel = { urgent:'急ぎ', high:'重要', normal:'', later:'後で' }[t.priority] || t.priority;
+      html += `<div class="task${isDone}" data-id="${esc(t.id)}" data-priority="${esc(t.priority)}" onclick="toggleTask(this)">
+        <div class="chk"></div>
+        <div class="task-text">${esc(t.text)}</div>
+        ${pLabel ? `<div class="task-tag">${esc(pLabel)}</div>` : '<div></div>'}
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // PROJECTS
+  if (state.projects.length) {
+    const statusLabel = { live:'LIVE', wip:'WIP', ready:'READY', planned:'PLANNED' };
+    html += `<div class="sec">
+      <div class="sec-hd">
+        <div class="sec-title">Projects</div>
+        <div class="sec-line"></div>
+        <div class="sec-count">${state.projects.length}</div>
+      </div>
+      <div class="projects">`;
+    state.projects.forEach(p => {
+      const sl = statusLabel[p.status] || p.status.toUpperCase();
+      const urlHtml = p.url
+        ? `<a class="purl" href="${esc(p.url)}" target="_blank" rel="noopener">↗ ${esc(p.url.replace(/^https?:\/\//,''))}</a>`
+        : `<span class="purl empty">（URL未設定）</span>`;
+      const tagsHtml = p.tags.map(t=>`<span class="ptag">${esc(t)}</span>`).join('');
+      html += `<div class="pcard" data-status="${esc(p.status)}">
+        <div class="pstatus"><div class="dot"></div>${sl}</div>
+        <div class="pname">${esc(p.name)}</div>
+        <div class="pdesc">${esc(p.desc)}</div>
+        ${tagsHtml ? `<div class="ptags">${tagsHtml}</div>` : ''}
+        ${urlHtml}
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // CHANNELS
+  if (state.channels.length) {
+    html += `<div class="sec">
+      <div class="sec-hd">
+        <div class="sec-title">Channels</div>
+        <div class="sec-line"></div>
+      </div>
+      <div class="channels">`;
+    state.channels.forEach(c => {
+      html += `<div class="ccard">
+        <div class="cname">${esc(c.name)}</div>
+        <ul class="citems">${c.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // NOTES
+  if (state.notes.length) {
+    html += `<div class="sec">
+      <div class="sec-hd">
+        <div class="sec-title">Notes</div>
+        <div class="sec-line"></div>
+      </div>`;
+    state.notes.forEach(n => {
+      html += `<div class="note-box" style="margin-bottom:10px">${esc(n)}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+function renderWelcome(el) {
+  el.innerHTML = `
+  <div class="welcome">
+    <div class="welcome-title">MIERU</div>
+    <p class="welcome-sub">
+      CSVをアップロードするだけで<br>プロジェクトの全体像が一目でわかる。
+    </p>
+    <div class="welcome-steps">
+      <div class="step"><div class="step-num">1</div><div>Claudeに「MIERUのCSVを更新して」と伝える</div></div>
+      <div class="step"><div class="step-num">2</div><div>ClaudeがCSVを出力する</div></div>
+      <div class="step"><div class="step-num">3</div><div>右上の <strong>「CSV をアップロード」</strong> で読み込む</div></div>
+      <div class="step"><div class="step-num">4</div><div>ダッシュボードが即更新される</div></div>
+    </div>
+
+    <div class="csv-prompt">
+      <pre><span class="cm"># type, name, status, description, url, tags, priority</span>
+focus, , , 今日の最重要タスクをここに書く, , ,
+project, KAGAMI, live, AI日記ツール, https://example.com, HTML|API, 1
+project, ぼうけんのしょ, wip, 積みゲーRPG, , HTML|Steam, 2
+task, Steam APIキー取得, todo, , , urgent, urgent
+task, worker.js更新, todo, , , infra, high
+channel, X, , 毎日の進捗|クリア報告|#ぼうけんのしょ, , ,
+note, , , 今週はリリースを最優先にする, , ,</pre>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+// INTERACTIONS
+// ══════════════════════════════════════════════
+function toggleTask(el) {
+  const id = el.dataset.id;
+  taskDone[id] = !taskDone[id];
+  el.classList.toggle('done', taskDone[id]);
+  // update chk
+  const chk = el.querySelector('.chk');
+  if (taskDone[id]) {
+    chk.innerHTML = '';
+    el.classList.add('done');
+  } else {
+    chk.innerHTML = '';
+    el.classList.remove('done');
+  }
+  localStorage.setItem(STORE_TASKS, JSON.stringify(taskDone));
+  // re-render count
+  const tasks = document.querySelectorAll('.task');
+  const done = [...tasks].filter(t=>t.classList.contains('done')).length;
+  const count = document.querySelector('.sec-count');
+  if (count) count.textContent = `${done} / ${tasks.length}`;
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── FILE UPLOAD ──
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const text = ev.target.result;
+    const parsed = parseCSV(text);
+    if (!parsed) { toast('CSVの読み込みに失敗しました'); return; }
+    state = parsed;
+    taskDone = {};
+    localStorage.setItem(STORE_CSV, text);
+    localStorage.setItem(STORE_TASKS, '{}');
+    render();
+    toast('✓ ダッシュボードを更新しました');
+  };
+  reader.readAsText(file, 'UTF-8');
+  e.target.value = '';
+});
+
+// ══════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════
+(function boot() {
+  // Date
+  const d = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('hd-date').textContent =
+    `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${days[d.getDay()]}`;
+
+  // Restore task state
+  try { taskDone = JSON.parse(localStorage.getItem(STORE_TASKS) || '{}'); } catch(e){}
+
+  // Restore CSV
+  const saved = localStorage.getItem(STORE_CSV);
+  if (saved) {
+    const parsed = parseCSV(saved);
+    if (parsed) {
+      state = parsed;
+      render();
+      return;
+    }
+  }
+  render(); // show welcome
+})();
+</script>
+</body>
+</html>
