@@ -282,15 +282,21 @@ let taskDone = {};
 // CSV PARSER
 // ══════════════════════════════════════════════
 function parseCSV(text) {
-  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  // Strip BOM
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+  const lines = text.trim().split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#'));
   if (!lines.length) return null;
 
-  // Strip BOM
-  if (lines[0].charCodeAt(0) === 0xFEFF) lines[0] = lines[0].slice(1);
+  // 固定列順: type, name, status, description, url, tags, priority
+  // ヘッダー行があれば読み飛ばす
+  const COLS = ['type','name','status','description','url','tags','priority'];
+  const firstCells = lines[0].split(',').map(c=>c.trim().toLowerCase());
+  const startIdx = (firstCells[0] === 'type') ? 1 : 0;
 
-  const header = lines[0].split(',').map(h => h.trim().toLowerCase());
-  const rows = lines.slice(1).map(line => {
-    // Handle quoted commas
+  function parseLine(line) {
     const cells = [];
     let cur = '', inQ = false;
     for (const ch of line) {
@@ -300,9 +306,11 @@ function parseCSV(text) {
     }
     cells.push(cur.trim());
     const obj = {};
-    header.forEach((h, i) => obj[h] = (cells[i] || '').trim());
+    COLS.forEach((h, i) => obj[h] = (cells[i] || '').trim());
     return obj;
-  });
+  }
+
+  const rows = lines.slice(startIdx).map(parseLine);
 
   const result = { focus:'', projects:[], tasks:[], channels:[], notes:[] };
 
